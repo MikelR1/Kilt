@@ -79,15 +79,19 @@ open class ModLoadingContext(protected val mod: ForgeMod) {
                 return get(source).activeContainer
             }
 
+        // TODO: actually handle multithreading this properly
         @JvmStatic
         fun get(): ModLoadingContext {
-            if (kiltActiveModId != null) {
-                if (!contexts.contains(kiltActiveModId)) {
-                    val mod = Kilt.loader.getMod(kiltActiveModId!!) ?: throw Exception("Kilt has not finished loading mods yet!")
-                    contexts[kiltActiveModId!!] = ModLoadingContext(mod)
+            // ensure the mod ID doesn't get overwritten at the exact same time
+            val modId = kiltActiveModId
+
+            if (modId != null) {
+                if (!contexts.contains(modId)) {
+                    val mod = Kilt.loader.getMod(modId) ?: throw Exception("Kilt has not finished loading mods yet!")
+                    contexts[modId] = ModLoadingContext(mod)
                 }
 
-                return contexts[kiltActiveModId]!!
+                return contexts[modId]!!
             }
 
             return getForgeContext()
