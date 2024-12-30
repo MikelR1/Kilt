@@ -1,8 +1,5 @@
-@file:Suppress("LocalVariableName", "UnstableApiUsage")
-
 import org.ajoberstar.grgit.Grgit
 import org.jetbrains.kotlin.daemon.common.toHexString
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import xyz.bluspring.kilt.gradle.AccessTransformerRemapper
 import java.security.MessageDigest
 
@@ -37,6 +34,77 @@ loom {
         showMessageTypes.set(true)
 
         messages.set(mutableMapOf("ACCESSOR_TARGET_NOT_FOUND" to "disabled"))
+    }
+}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+
+    maven("https://mvn.devos.one/releases/") {
+        name = "devOS Maven"
+    }
+
+    maven("https://mvn.devos.one/snapshots/") {
+        name = "devOS Maven (Snapshots)"
+    }
+
+    maven("https://jitpack.io/") {
+        name = "JitPack"
+    }
+
+    maven("https://maven.cafeteria.dev/releases/") {
+        name = "Cafeteria Dev"
+    }
+
+    maven("https://maven.jamieswhiteshirt.com/libs-release") {
+        name = "JamiesWhiteShirt Dev"
+        content {
+            includeGroup("com.jamieswhiteshirt")
+        }
+    }
+
+    maven("https://raw.githubusercontent.com/Fuzss/modresources/main/maven/") {
+        name = "Fuzs Mod Resources"
+    }
+
+    maven("https://maven.minecraftforge.net/") {
+        name = "MinecraftForge Maven"
+    }
+
+    maven("https://maven.architectury.dev") {
+        name = "Architectury"
+    }
+
+    maven("https://maven.parchmentmc.org") {
+        name = "ParchmentMC"
+    }
+
+    flatDir {
+        dir("libs")
+    }
+
+    // Testing mod sources
+    maven("https://api.modrinth.com/maven") {
+        name = "Modrinth"
+        content {
+            includeGroup("maven.modrinth")
+        }
+    }
+
+    maven("https://cursemaven.com") {
+        name = "CurseMaven"
+        content {
+            includeGroup("curse.maven")
+        }
+    }
+
+    maven("https://maven.terraformersmc.com/") {
+        name = "TerraformersMC"
+    }
+
+    maven("https://maven.su5ed.dev/releases") {
+        name = "Su5ed"
     }
 }
 
@@ -161,20 +229,16 @@ java {
     sourceCompatibility = javaVersion
     targetCompatibility = javaVersion
 
+    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+    // if it is present.
+    // If you remove this line, sources will not be generated.
     withSourcesJar()
-}
-
-interface InjectedServices {
-    @get:Inject val fs: FileSystemOperations
-    @get:Inject val layout: ProjectLayout
-    @get:Inject val provider: ProviderFactory
 }
 
 tasks {
     register("countPatchProgress") {
         group = "kilt"
         description = "Counts the total of patches in Forge, and checks how many Kilt ForgeInjects there are, to check how much is remaining."
-        notCompatibleWithConfigurationCache("Must not be cached")
 
         doFirst {
             // Scan Forge patches dir
@@ -207,7 +271,6 @@ tasks {
     register("tagPatches") {
         group = "kilt"
         description = "Tags the Kilt ForgeInjects with their currently tracked patch hash to ensure they are all up to date."
-        notCompatibleWithConfigurationCache("Must not be cached")
 
         doFirst {
             fun readDir(file: File) {
@@ -251,26 +314,28 @@ tasks {
         }
     }
 
-    val projectVersion = project.version
-
     processResources {
-        val provider = objects.newInstance<InjectedServices>().provider
-        val propertiesMap = mutableMapOf(
-            "version" to projectVersion,
-            "loader_version" to provider.gradleProperty("loader_version"),
-            "fabric_version" to provider.gradleProperty("fabric_version"),
-            "minecraft_version" to provider.gradleProperty("minecraft_version"),
-            "fabric_kotlin_version" to provider.gradleProperty("fabric_kotlin_version"),
-            "fabric_asm_version" to provider.gradleProperty("fabric_asm_version"),
-            "forge_config_version" to provider.gradleProperty("forgeconfigapiport_version"),
-            "architectury_version" to provider.gradleProperty("architectury_version"),
-        )
-        propertiesMap.forEach { (key, value) -> inputs.property(key, value) }
-
+        inputs.property("version", project.version)
+        inputs.property("loader_version", project.property("loader_version"))
+        inputs.property("fabric_version", project.property("fabric_version"))
+        inputs.property("minecraft_version", project.property("minecraft_version"))
+        inputs.property("fabric_kotlin_version", project.property("fabric_kotlin_version"))
+        inputs.property("fabric_asm_version", project.property("fabric_asm_version"))
+        inputs.property("forge_config_version", project.property("forgeconfigapiport_version"))
+        inputs.property("architectury_version", project.property("architectury_version"))
         filteringCharset = "UTF-8"
 
         filesMatching("fabric.mod.json") {
-            expand(propertiesMap)
+            expand(mutableMapOf(
+                "version" to project.version,
+                "loader_version" to project.property("loader_version"),
+                "fabric_version" to project.property("fabric_version"),
+                "minecraft_version" to project.property("minecraft_version"),
+                "fabric_kotlin_version" to project.property("fabric_kotlin_version"),
+                "fabric_asm_version" to project.property("fabric_asm_version"),
+                "forge_config_version" to project.property("forgeconfigapiport_version"),
+                "architectury_version" to project.property("architectury_version"),
+            ))
         }
 
         // Rename Forge's mods.toml, so launchers like Prism don't end up detecting it over Kilt.
@@ -280,9 +345,7 @@ tasks {
     }
 
     compileKotlin {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.fromTarget(targetJavaVersion))
-        }
+        kotlinOptions.jvmTarget = targetJavaVersion
     }
 
     jar {
@@ -308,33 +371,35 @@ tasks {
             }
         }
 
+        // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
         repositories {
-            mavenLocal()
+            // Add repositories to publish to here.
+            // Notice: This block does NOT have the same function as the block in the top level.
+            // The repositories here will be used for publishing your artifact, not for
+            // retrieving dependencies.
         }
     }
 
     register("setupDevEnvironment") {
         group = "kilt"
 
-        val services = project.objects.newInstance<InjectedServices>()
         doLast {
-            val configDir = services.layout.projectDirectory.dir("run/config")
-            configDir.asFile.mkdirs()
+            val configDir = File("$projectDir/run/config")
+            if (!configDir.exists())
+                configDir.mkdirs()
 
-            val loaderDepsFile = configDir.file("fabric_loader_dependencies.json")
-            val templateFile = services.layout.projectDirectory.file("gradle/loader_dep_overrides.json")
-            services.fs.copy {
-                from(templateFile)
-                into(loaderDepsFile)
-            }
+            val loaderDepsFile = File(configDir, "fabric_loader_dependencies.json")
+
+            if (!loaderDepsFile.exists())
+                loaderDepsFile.createNewFile()
+
+            loaderDepsFile.writeText(File("$projectDir/gradle/loader_dep_overrides.json").readText())
         }
     }
 
     register("transformerToWidener") {
         group = "kilt"
-        notCompatibleWithConfigurationCache("Must not be cached")
 
-        val minecraft_version: String by project
         doLast {
             val remapper = AccessTransformerRemapper()
             val transformerFile = File("$projectDir/forge/src/main/resources/META-INF/accesstransformer.cfg")
@@ -343,8 +408,8 @@ tasks {
             remapper.convertTransformerToWidener(
                 transformerFile.readText(),
                 widenerFile,
-                minecraft_version,
-                layout.buildDirectory.asFile.get()
+                project.property("minecraft_version") as String,
+                layout.buildDirectory.get().asFile
             )
         }
     }
