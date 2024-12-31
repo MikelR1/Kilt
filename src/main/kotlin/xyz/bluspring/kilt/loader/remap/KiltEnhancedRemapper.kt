@@ -1,14 +1,20 @@
 package xyz.bluspring.kilt.loader.remap
 
+import com.google.common.cache.CacheBuilder
 import net.minecraftforge.fart.api.ClassProvider
 import net.minecraftforge.fart.internal.EnhancedRemapper
 import net.minecraftforge.srgutils.IMappingFile
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
+import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 
 class KiltEnhancedRemapper(provider: ClassProvider, file: IMappingFile, log: Consumer<String>) : EnhancedRemapper(provider, file, log) {
+    private val cachedLoadedClasses = CacheBuilder.newBuilder()
+        .expireAfterAccess(1L, TimeUnit.MINUTES)
+        .build<String, ClassNode>()
+
     override fun mapMethodName(owner: String, name: String, descriptor: String): String {
         if (name.startsWith("m_") && name.endsWith("_")) {
             val mappedNames = KiltRemapper.srgMappedMethods[name] ?: return super.mapMethodName(owner, name, descriptor)
@@ -33,12 +39,18 @@ class KiltEnhancedRemapper(provider: ClassProvider, file: IMappingFile, log: Con
         if (actualOwnerName.contains("java/lang/Object"))
             return null
 
-        val classStream = this.classProvider.getClassStream(actualOwnerName)
+        try {
+            val classNode = cachedLoadedClasses.get(actualOwnerName) {
+                val classStream = this.classProvider.getClassStream(actualOwnerName)
 
-        if (classStream != null) {
-            val classReader = ClassReader(classStream)
-            val classNode = ClassNode(Opcodes.ASM9)
-            classReader.accept(classNode, 0)
+                if (classStream != null) {
+                    val classReader = ClassReader(classStream)
+                    val node = ClassNode(Opcodes.ASM9)
+                    classReader.accept(node, 0)
+
+                    node
+                } else throw ClassNotFoundException()
+            }
 
             val tryFindFromSuper = tryFindMethodName(classNode.superName, mappedNames)
             if (tryFindFromSuper != null)
@@ -47,7 +59,7 @@ class KiltEnhancedRemapper(provider: ClassProvider, file: IMappingFile, log: Con
             for (interfaceName in classNode.interfaces) {
                 return tryFindMethodName(interfaceName, mappedNames) ?: continue
             }
-        }
+        } catch (_: Exception) {}
 
         return null
     }
