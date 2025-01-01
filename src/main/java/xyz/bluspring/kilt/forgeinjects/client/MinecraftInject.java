@@ -9,6 +9,7 @@ import net.minecraft.client.Options;
 import net.minecraft.client.Timer;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.color.item.ItemColors;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.main.GameConfig;
 import net.minecraft.client.particle.ParticleEngine;
 import net.minecraft.client.searchtree.SearchRegistry;
@@ -19,6 +20,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.CreativeModeTabSearchRegistry;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.extensions.IForgeMinecraft;
+import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.loading.ClientModLoader;
 import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.fml.ModLoader;
@@ -54,6 +56,9 @@ public abstract class MinecraftInject implements MinecraftInjection, IForgeMinec
     @Shadow @Final private BlockColors blockColors;
     @Unique
     private float realPartialTick;
+
+    // This has to be public, it's a field that is used by the WorkaroundFixer.
+    public Gui kilt$forgeGui = null;
 
     @Override
     public float getPartialTick() {
@@ -177,5 +182,10 @@ public abstract class MinecraftInject implements MinecraftInjection, IForgeMinec
             return original.call();
 
         return this.kilt$tagSearchKey;
+    }
+
+    @Override
+    public void kilt$setForgeGui(ForgeGui gui) {
+        this.kilt$forgeGui = gui;
     }
 }

@@ -41,8 +41,9 @@ import java.util.List;
 
 @Mixin(Gui.class)
 public abstract class GuiInject implements GuiInjection {
-    private ForgeGui getGui() {
-        return KiltClient.Companion.getForgeGui();
+    @Unique
+    private ForgeGui kilt$getGui() {
+        return KiltClient.forgeGui;
     }
 
     @Shadow public Minecraft minecraft;
@@ -89,7 +90,7 @@ public abstract class GuiInject implements GuiInjection {
                 if (pre(window, guiGraphics, delta, overlay))
                     continue;
 
-                overlay.overlay().render(this.getGui(), guiGraphics, delta, this.screenWidth, this.screenHeight);
+                overlay.overlay().render(this.kilt$getGui(), guiGraphics, delta, this.screenWidth, this.screenHeight);
 
                 post(guiGraphics, delta, overlay);
             } catch (Exception e) {
@@ -145,7 +146,7 @@ public abstract class GuiInject implements GuiInjection {
     public boolean kilt$renderHelmet(ItemStack instance, Item item, @Local(argsOnly = true) GuiGraphics guiGraphics, @Local(ordinal = 0, index = 0, argsOnly = true) float delta) {
         if (kilt$renderOverlay(guiGraphics, delta, VanillaGuiOverlay.HELMET)) {
             // Let's just overwrite this with a call to this renderHelmet
-            this.getGui().renderHelmet(delta, guiGraphics);
+            this.kilt$getGui().renderHelmet(delta, guiGraphics);
 
             post(guiGraphics, delta, VanillaGuiOverlay.HELMET);
         }
