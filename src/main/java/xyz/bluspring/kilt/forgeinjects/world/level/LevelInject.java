@@ -8,15 +8,19 @@ import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.entity.EntityTypeTest;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.common.capabilities.CapabilityProvider;
 import net.minecraftforge.common.capabilities.ICapabilityProviderImpl;
 import net.minecraftforge.common.extensions.IForgeBlockState;
 import net.minecraftforge.common.extensions.IForgeLevel;
 import net.minecraftforge.common.util.BlockSnapshot;
+import net.minecraftforge.entity.PartEntity;
 import net.minecraftforge.event.ForgeEventFactory;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -33,7 +37,9 @@ import xyz.bluspring.kilt.injections.world.level.LevelInjection;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 @Mixin(value = Level.class, priority = 1111) // higher priority to mixin to Porting Lib
 @Extends(CapabilityProvider.class)
@@ -82,7 +88,7 @@ public abstract class LevelInject implements CapabilityProviderInjection, ICapab
             this.capturedBlockSnapshots.add(blockSnapshot.get());
         }
 
-        // TODO: what are these used for?
+        // TODO: Kilt: what are these used for?
         BlockState old = this.getBlockState(posRef.get());
         int oldLight = old.getLightEmission((Level) (Object) this, posRef.get());
         int oldOpacity = old.getLightBlock((Level) (Object) this, posRef.get());
@@ -145,5 +151,27 @@ public abstract class LevelInject implements CapabilityProviderInjection, ICapab
     @Redirect(method = "@MixinSquared:Handler", at = @At(value = "INVOKE", target = "Ljava/util/ArrayList;forEach(Ljava/util/function/Consumer;)V", remap = false))
     private void kilt$loadBlockEntitiesForge(ArrayList<BlockEntity> instance, Consumer<BlockEntity> consumer) {
         instance.forEach(BlockEntity::onLoad);
+    }
+
+    @Inject(method = "getEntities(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/phys/AABB;Ljava/util/function/Predicate;)Ljava/util/List;", at = @At("TAIL"))
+    private void kilt$addPartEntitiesToList(Entity entity, AABB area, Predicate<? super Entity> predicate, CallbackInfoReturnable<List<Entity>> cir, @Local List<Entity> list) {
+        for (PartEntity<?> partEntity : this.kilt$getPartEntities()) {
+            if (partEntity != entity && partEntity.getBoundingBox().intersects(area) && predicate.test(partEntity)) {
+                list.add(partEntity);
+            }
+        }
+    }
+
+    @Inject(method = "getEntities(Lnet/minecraft/world/level/entity/EntityTypeTest;Lnet/minecraft/world/phys/AABB;Ljava/util/function/Predicate;Ljava/util/List;I)V", at = @At("TAIL"))
+    private <T extends Entity> void kilt$addPartEntitiesToList(EntityTypeTest<Entity, T> entityTypeTest, AABB bounds, Predicate<? super T> predicate, List<? super T> output, int maxResults, CallbackInfo ci) {
+        for (PartEntity<?> partEntity : this.kilt$getPartEntities()) {
+            var castEntity = entityTypeTest.tryCast(partEntity);
+            if (castEntity != null && partEntity.getBoundingBox().intersects(bounds) && predicate.test(castEntity)) {
+                // TODO: Kilt: doesn't this technically overflow the maxResults?
+                output.add(castEntity);
+                if (output.size() >= maxResults)
+                    break;
+            }
+        }
     }
 }

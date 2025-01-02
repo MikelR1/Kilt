@@ -65,6 +65,7 @@
         "server.level.ChunkMapInject",
         "server.level.ServerChunkCacheInject",
         "server.level.ServerLevelInject",
+        "server.level.ServerLevelInject$EntityCallbacksInject",
         "server.level.ServerPlayerGameModeInject",
         "server.level.ServerPlayerInject",
         "server.network.MemoryServerHandshakePacketListenerImplInject",

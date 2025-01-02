@@ -1,16 +1,24 @@
 // TRACKED HASH: da42f0fcd542552388a5aff060abf470c54f9f10
 package xyz.bluspring.kilt.forgeinjects.world.entity.player;
 
+import com.llamalad7.mixinextras.expression.Definition;
+import com.llamalad7.mixinextras.expression.Expression;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.llamalad7.mixinextras.sugar.Local;
+import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.boss.EnderDragonPart;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.common.extensions.IForgePlayer;
+import net.minecraftforge.entity.PartEntity;
 import net.minecraftforge.event.ForgeEventFactory;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -71,6 +79,21 @@ public abstract class PlayerInject extends LivingEntity implements IForgePlayer,
     private void kilt$checkPlayerTargetAttack(Entity target, CallbackInfo ci) {
         if (!ForgeHooks.onPlayerAttackTarget((Player) (Object) this, target))
             ci.cancel();
+    }
+
+    @Definition(id = "entity", local = @Local(type = Entity.class, argsOnly = true))
+    @Definition(id = "EnderDragonPart", type = EnderDragonPart.class)
+    @Expression("entity instanceof EnderDragonPart")
+    @WrapOperation(method = "attack", at = @At("MIXINEXTRAS:EXPRESSION"))
+    private boolean kilt$trySetAttackedMultipartEntity(Object object, Operation<Boolean> original, @Local(ordinal = 1) LocalRef<Entity> entity) {
+        if (original.call(object))
+            return true;
+
+        if (object instanceof PartEntity<?> partEntity) {
+            entity.set(partEntity.getParent());
+        }
+
+        return false;
     }
 
     /*@ModifyReturnValue(method = "createAttributes", at = @At("RETURN"))
