@@ -283,6 +283,7 @@
         "client.renderer.FogRendererInject",
         "client.renderer.ItemBlockRenderTypesInject",
         "client.renderer.ItemInHandRendererInject",
+        "client.renderer.ItemModelShaperInject",
         "client.renderer.LevelRendererInject",
         "client.renderer.RenderTypeInject",
         "client.renderer.ScreenEffectRendererInject",
