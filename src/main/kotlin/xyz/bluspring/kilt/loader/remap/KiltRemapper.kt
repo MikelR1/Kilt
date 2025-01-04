@@ -50,8 +50,12 @@ object KiltRemapper {
     // it remaps all the mods following the remapper changes.
     // this can update by like 12 versions in 1 update, so don't worry too much about it.
     const val REMAPPER_VERSION = 141
-
     const val MC_MAPPED_JAR_VERSION = 3
+
+    // Kilt JVM flags
+    private val forceRemap = KiltFlags.FORCE_REMAPPING
+    private val disableRemaps = KiltFlags.DISABLE_REMAPPING
+    internal val forceProductionRemap = KiltFlags.FORCE_PRODUCTION_REMAPPING
 
     val logConsumer = Consumer<String> {
         logger.debug(it)
@@ -79,11 +83,6 @@ object KiltRemapper {
     private val kiltWorkaroundTree = TinyMappingFactory.load(
         this::class.java.getResourceAsStream("/kilt_workaround_mappings.tiny")!!.bufferedReader()
     )
-
-    // Kilt JVM flags
-    private val forceRemap = KiltFlags.FORCE_REMAPPING
-    private val disableRemaps = KiltFlags.DISABLE_REMAPPING
-    internal val forceProductionRemap = KiltFlags.FORCE_PRODUCTION_REMAPPING
 
     private val mappingResolver = if (forceProductionRemap)
         NoopMappingResolver()
