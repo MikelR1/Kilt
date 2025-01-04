@@ -3,6 +3,7 @@ package xyz.bluspring.kilt.loader.asm
 import com.google.gson.JsonParser
 import net.fabricmc.loader.impl.gui.FabricGuiEntry
 import xyz.bluspring.kilt.Kilt
+import xyz.bluspring.kilt.loader.KiltFlags
 import xyz.bluspring.kilt.loader.mod.ForgeMod
 
 
@@ -60,7 +61,7 @@ object CoreModLoader {
     )
 
     val loadedCoreMods = mutableListOf<CoreMod>()
-    val enableCoreMods = System.getProperty("kilt.enableCoreMods") == "true"
+    val enableCoreMods = KiltFlags.ENABLE_COREMODS
 
     fun scanAndLoadCoreMods(mod: ForgeMod) {
         if (!enableCoreMods)

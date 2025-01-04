@@ -26,6 +26,7 @@ import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
 import org.slf4j.LoggerFactory
 import xyz.bluspring.kilt.Kilt
+import xyz.bluspring.kilt.loader.KiltFlags
 import xyz.bluspring.kilt.loader.KiltLoader
 import xyz.bluspring.kilt.loader.mod.ForgeMod
 import xyz.bluspring.kilt.loader.remap.fixers.*
@@ -48,9 +49,9 @@ object KiltRemapper {
     // Keeps track of the remapper changes, so every time I update the remapper,
     // it remaps all the mods following the remapper changes.
     // this can update by like 12 versions in 1 update, so don't worry too much about it.
-    const val REMAPPER_VERSION = 140
+    const val REMAPPER_VERSION = 141
 
-    const val MC_MAPPED_JAR_VERSION = 2
+    const val MC_MAPPED_JAR_VERSION = 3
 
     val logConsumer = Consumer<String> {
         logger.debug(it)
@@ -60,10 +61,6 @@ object KiltRemapper {
 
     private val launcher = FabricLauncherBase.getLauncher()
     internal val useNamed = launcher.targetNamespace != "intermediary"
-
-    // Mainly for debugging, to make sure all Forge mods remap correctly in production environments
-    // without needing to actually launch a production environment.
-    internal val forceProductionRemap = System.getProperty("kilt.forceProductionRemap")?.lowercase() == "true"
 
     // This is created automatically using https://github.com/BluSpring/srg2intermediary
     // srg -> intermediary
@@ -83,14 +80,16 @@ object KiltRemapper {
         this::class.java.getResourceAsStream("/kilt_workaround_mappings.tiny")!!.bufferedReader()
     )
 
-    // Mainly for debugging, so already-remapped Forge mods will be remapped again.
-    private val forceRemap = System.getProperty("kilt.forceRemap")?.lowercase() == "true"
+    // Kilt JVM flags
+    private val forceRemap = KiltFlags.FORCE_REMAPPING
+    private val disableRemaps = KiltFlags.DISABLE_REMAPPING
+    internal val forceProductionRemap = KiltFlags.FORCE_PRODUCTION_REMAPPING
 
-    // Mainly for debugging, used to test unobfuscated mods and ensure that Kilt is running as intended.
-    private val disableRemaps = System.getProperty("kilt.noRemap")?.lowercase() == "true"
+    private val mappingResolver = if (forceProductionRemap)
+        NoopMappingResolver()
+    else
+        FabricLoader.getInstance().mappingResolver
 
-    private val mappingResolver =
-        if (forceProductionRemap) NoopMappingResolver() else FabricLoader.getInstance().mappingResolver
     private val namespace: String = if (useNamed) launcher.targetNamespace else "intermediary"
 
     private lateinit var remappedModsDir: Path
@@ -174,6 +173,67 @@ object KiltRemapper {
 
         if (forceRemap)
             logger.warn("Forced remaps enabled! All Forge mods will be remapped.")
+
+        // Automatically delete outdated remapped versions
+        run {
+            val markedForDeletion = mutableListOf<Path>()
+
+            KiltLoader.kiltCacheDir.walk().forEach {
+                if (it.extension != "jar")
+                    return@forEach
+
+                if (it.nameWithoutExtension.startsWith("minecraft_") &&
+                    (
+                        !it.nameWithoutExtension.contains(KiltLoader.MC_VERSION.friendlyString) ||
+                        !it.endsWith("_$MC_MAPPED_JAR_VERSION")
+                    )
+                ) {
+                    markedForDeletion.add(it)
+                }
+            }
+
+            remappedModsDir.walk().forEach { file ->
+                if (file.extension != "jar")
+                    return@forEach
+
+                val mod = modLoadingQueue.firstOrNull { file.nameWithoutExtension.startsWith(it.modId) }
+
+                if (mod == null) {
+                    markedForDeletion.add(file)
+                    return@forEach
+                }
+
+                val fileNameSplit = file.nameWithoutExtension.removePrefix("${mod.modId}_").split("_")
+                val fileRemapperVersion = fileNameSplit[0].toIntOrNull()
+                val fileHash = fileNameSplit[1]
+
+                if (fileRemapperVersion == null) {
+                    markedForDeletion.add(file)
+                    return@forEach
+                }
+
+                if (fileRemapperVersion != REMAPPER_VERSION) {
+                    markedForDeletion.add(file)
+                    return@forEach
+                }
+
+                if (mod.modFile == null) {
+                    markedForDeletion.add(file)
+                    return@forEach
+                }
+
+                val currentHash = DigestUtils.md5Hex(mod.modFile.inputStream())
+
+                if (currentHash != fileHash) {
+                    markedForDeletion.add(file)
+                    return@forEach
+                }
+            }
+
+            for (path in markedForDeletion) {
+                path.deleteIfExists()
+            }
+        }
 
         srgGamePath = remapMinecraft()
 

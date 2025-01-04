@@ -6,6 +6,7 @@ import net.fabricmc.loader.impl.FabricLoaderImpl
 import net.fabricmc.loader.impl.lib.accesswidener.AccessWidener
 import org.objectweb.asm.Opcodes
 import org.slf4j.LoggerFactory
+import xyz.bluspring.kilt.loader.KiltFlags
 import xyz.bluspring.kilt.loader.remap.KiltRemapper
 import xyz.bluspring.kilt.util.DeltaTimeProfiler
 import java.util.regex.Pattern
@@ -14,7 +15,7 @@ import java.util.regex.Pattern
 // The specification can be found here: https://github.com/MinecraftForge/AccessTransformers/blob/master/FMLAT.md
 object AccessTransformerLoader {
     private val logger = LoggerFactory.getLogger("Kilt Access Transformers")
-    private val debug = System.getProperty("kilt.printATDebug") == "true"
+    private val debug = KiltFlags.ENABLE_ACCESS_TRANSFORMER_DEBUG
     private var hasLoaded = false
 
     private val whitespace = Pattern.compile("[ \t]+")

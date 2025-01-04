@@ -2,6 +2,7 @@ package xyz.bluspring.kilt.util
 
 import net.fabricmc.loader.api.FabricLoader
 import xyz.bluspring.kilt.Kilt
+import xyz.bluspring.kilt.loader.KiltFlags
 import java.util.*
 
 /**
@@ -47,7 +48,7 @@ object DeltaTimeProfiler {
         if (!timeStack.isEmpty())
             Kilt.logger.warn("Time stack is not empty! Will only print currently available stacks.")
 
-        if (!FabricLoader.getInstance().isDevelopmentEnvironment && System.getProperty("kilt.enableProfiling") != "true")
+        if (!FabricLoader.getInstance().isDevelopmentEnvironment && !KiltFlags.ENABLE_PROFILING)
             return
 
         Kilt.logger.info("Time deltas:")
