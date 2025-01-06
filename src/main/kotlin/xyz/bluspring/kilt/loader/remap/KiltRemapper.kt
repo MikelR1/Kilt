@@ -49,7 +49,7 @@ object KiltRemapper {
     // Keeps track of the remapper changes, so every time I update the remapper,
     // it remaps all the mods following the remapper changes.
     // this can update by like 12 versions in 1 update, so don't worry too much about it.
-    const val REMAPPER_VERSION = 141
+    const val REMAPPER_VERSION = 142
     const val MC_MAPPED_JAR_VERSION = 3
 
     // Kilt JVM flags
@@ -352,7 +352,9 @@ object KiltRemapper {
                 jarOutput: JarOutputStream
             ) {
                 val refmapData =
-                    JsonParser.parseReader(jar.getInputStream(entry).reader()).asJsonObject
+                    JsonParser.parseReader(withContext(Dispatchers.IO) {
+                        jar.getInputStream(entry)
+                    }.reader()).asJsonObject
 
                 val refmapMappings = refmapData.getAsJsonObject("mappings")
                 val newMappings = JsonObject()
@@ -361,7 +363,7 @@ object KiltRemapper {
                     val mapped = refmapMappings.getAsJsonObject(className)
                     val properMapped = JsonObject()
 
-                    mapped.entrySet().forEach { (name, element) ->
+                    mapped.entrySet().forEach mapper@{ (name, element) ->
                         val srgMappedString = element.asString
                         val srgClass = if (srgMappedString.startsWith("L"))
                             srgMappedString.replaceAfter(";", "")
@@ -447,8 +449,14 @@ object KiltRemapper {
                         } else {
                             // method
 
-                            val srgMethod =
-                                srgMappedString.replaceAfter("(", "").removeSuffix("(").removePrefix(srgClass)
+                            // If this isn't done, it ends up becoming "<init><init>".
+                            // Don't ask.
+                            if (srgMappedString == "<init>") {
+                                properMapped.addProperty(name, "<init>")
+                                return@mapper
+                            }
+
+                            val srgMethod = srgMappedString.replaceAfter("(", "").removeSuffix("(").removePrefix(srgClass)
                             val srgDesc = srgMappedString.replaceBefore("(", "")
 
                             val intermediaryDesc = remapDescriptor(srgDesc, toIntermediary = forceProductionRemap)
@@ -537,7 +545,7 @@ object KiltRemapper {
                 withContext(Dispatchers.IO) {
                     synchronized(jarOutput) {
                         jarOutput.putNextEntry(entry)
-                        Kilt.gson.toJson(refmapData, jarOutput.bufferedWriter())
+                        jarOutput.write(refmapData.toString().toByteArray())
                         jarOutput.closeEntry()
                     }
                 }
