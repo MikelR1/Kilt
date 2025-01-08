@@ -191,6 +191,7 @@
         "world.level.block.StairBlockInject",
         "world.level.block.StemBlockInject",
         "world.level.block.StemGrownBlockInject",
+        "world.level.block.TntBlockInject",
         "world.level.block.entity.AbstractFurnaceBlockEntityInject",
         "world.level.block.entity.BaseContainerBlockEntityInject",
         "world.level.block.entity.BlockEntityInject",
