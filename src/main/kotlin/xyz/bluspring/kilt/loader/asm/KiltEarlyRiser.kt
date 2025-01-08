@@ -2,6 +2,7 @@ package xyz.bluspring.kilt.loader.asm
 
 import com.chocohead.mm.api.ClassTinkerers
 import net.fabricmc.loader.api.FabricLoader
+import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Label
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.FieldInsnNode
@@ -10,6 +11,7 @@ import org.objectweb.asm.tree.MethodInsnNode
 import org.objectweb.asm.tree.VarInsnNode
 import xyz.bluspring.kilt.Kilt
 import xyz.bluspring.kilt.loader.mixin.KiltMixinLoader
+import xyz.bluspring.kilt.loader.remap.KiltRemapper
 import xyz.bluspring.kilt.loader.remap.ObjectHolderDefinalizer
 import xyz.bluspring.kilt.loader.remap.fixers.EventClassVisibilityFixer
 import xyz.bluspring.kilt.loader.remap.fixers.EventEmptyInitializerFixer
@@ -272,6 +274,62 @@ class KiltEarlyRiser : Runnable {
                         })
                     }
                 }
+            }
+        }
+
+        run {
+            val biomeSpecialEffectsMapped = KiltRemapper.remapClass("net/minecraft/world/level/biome/BiomeSpecialEffects")
+            val grassColorModifierMapped = KiltRemapper.remapClass("net/minecraft/world/level/biome/BiomeSpecialEffects\$GrassColorModifier")
+            val biomeInjectionName = "xyz/bluspring/kilt/injections/world/biome/BiomeSpecialEffectsGrassColorModifierInjection"
+            val colorModifierName = "$grassColorModifierMapped\$ColorModifier"
+            val classWriter = ClassWriter(Opcodes.ASM9)
+            classWriter.visit(Opcodes.V17, Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC or Opcodes.ACC_INTERFACE or Opcodes.ACC_ABSTRACT, colorModifierName, null, "java/lang/Object", arrayOf("$biomeInjectionName\$ColorModifier"))
+
+            classWriter.visitNestHost(biomeSpecialEffectsMapped)
+            classWriter.visitAnnotation("Ljava/lang/FunctionalInterface;", true)
+            classWriter.visitInnerClass(grassColorModifierMapped, biomeSpecialEffectsMapped, grassColorModifierMapped.removePrefix(biomeSpecialEffectsMapped).removePrefix("\$"), Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC or Opcodes.ACC_ENUM)
+            classWriter.visitInnerClass(colorModifierName, grassColorModifierMapped, "ColorModifier", Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC or Opcodes.ACC_INTERFACE or Opcodes.ACC_ABSTRACT)
+            classWriter.visitInnerClass("$biomeInjectionName\$ColorModifier", biomeInjectionName, "ColorModifier", Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC or Opcodes.ACC_INTERFACE or Opcodes.ACC_ABSTRACT)
+
+            classWriter.visitMethod(Opcodes.ACC_PUBLIC or Opcodes.ACC_ABSTRACT, "modifyGrassColor", "(DDI)I", null, null)
+            classWriter.visitEnd()
+
+            ClassTinkerers.define("$grassColorModifierMapped\$ColorModifier", classWriter.toByteArray())
+
+            ClassTinkerers.addTransformation(grassColorModifierMapped) { classNode ->
+                classNode.access = Opcodes.ACC_PUBLIC or Opcodes.ACC_ENUM // why the fuck is this needed????
+                classNode.visitInnerClass(colorModifierName, grassColorModifierMapped, "ColorModifier", Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC or Opcodes.ACC_INTERFACE or Opcodes.ACC_ABSTRACT)
+
+                // Need to create this, and make sure it remaps to the pre-existing one.
+                classNode.visitMethod(Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC, "create", "(Ljava/lang/String;Ljava/lang/String;L$colorModifierName;)L$grassColorModifierMapped;", null, null).apply {
+                    this.visitCode()
+
+                    val label0 = Label()
+                    val label1 = Label()
+                    val label2 = Label()
+
+                    this.visitLabel(label0)
+                    this.visitVarInsn(Opcodes.ALOAD, 0)
+                    this.visitVarInsn(Opcodes.ALOAD, 1)
+                    this.visitVarInsn(Opcodes.ALOAD, 2)
+                    this.visitMethodInsn(Opcodes.INVOKESTATIC, grassColorModifierMapped, "create", "(Ljava/lang/String;Ljava/lang/String;L$biomeInjectionName\$ColorModifier;)L$grassColorModifierMapped;", false)
+
+                    this.visitLabel(label1)
+                    this.visitInsn(Opcodes.ARETURN)
+
+                    this.visitLabel(label2)
+                    this.visitLocalVariable("name", "Ljava/lang/String;", null, label0, label2, 0)
+                    this.visitLocalVariable("id", "Ljava/lang/String;", null, label0, label2, 1)
+                    this.visitLocalVariable("delegate", "L$biomeInjectionName\$ColorModifier;", null, label0, label2, 2)
+
+                    this.visitMaxs(0, 0)
+                    this.visitEnd()
+                }
+            }
+
+            ClassTinkerers.addTransformation(biomeSpecialEffectsMapped) { classNode ->
+                classNode.visitNestMember(colorModifierName)
+                classNode.visitInnerClass(colorModifierName, grassColorModifierMapped, "ColorModifier", Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC or Opcodes.ACC_INTERFACE or Opcodes.ACC_ABSTRACT)
             }
         }
 

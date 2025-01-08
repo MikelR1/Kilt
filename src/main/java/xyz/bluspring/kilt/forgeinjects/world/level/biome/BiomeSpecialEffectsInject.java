@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 // such a long line for just a class, bruh
 public abstract class BiomeSpecialEffectsInject {
     @Mixin(BiomeSpecialEffects.GrassColorModifier.class)
-    public static abstract class GrassColorModifierInject implements BiomeSpecialEffectsGrassColorModifierInjection, IExtensibleEnum {
+    public static class GrassColorModifierInject implements BiomeSpecialEffectsGrassColorModifierInjection, IExtensibleEnum {
         @CreateStatic
         private static BiomeSpecialEffects.GrassColorModifier byName(String name) {
             return BiomeSpecialEffectsGrassColorModifierInjection.byName(name);
@@ -32,7 +32,9 @@ public abstract class BiomeSpecialEffectsInject {
             return BiomeSpecialEffectsGrassColorModifierInjection.create(name, id, delegate);
         }
 
-        @Shadow public abstract String getName();
+        @Shadow public String getName() {
+            throw new IllegalStateException();
+        }
 
         @Shadow @Final @Mutable
         public static Codec<BiomeSpecialEffects.GrassColorModifier> CODEC;

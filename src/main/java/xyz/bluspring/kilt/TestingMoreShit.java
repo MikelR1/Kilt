@@ -105,12 +105,22 @@ public class TestingMoreShit {
         }
     }
 
+    @FunctionalInterface
+    public interface FuckYouToo {
+        int fuckYouToo(double a, double b, int c);
+    }
+
     public static class HowManyShitsDoINeedToTest extends Event {
         public HowManyShitsDoINeedToTest() {
             this(false);
         }
         public HowManyShitsDoINeedToTest(boolean a) {
             super();
+        }
+
+        @FunctionalInterface
+        public interface FuckYouuuu extends FuckYouToo {
+            int fuckYouToo(double a, double b, int c);
         }
     }
 

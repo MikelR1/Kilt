@@ -54,7 +54,6 @@ public abstract class ShaderInstanceInject {
         this(provider, resourceLocation.toString(), vertexFormat);
     }
 
-    @SuppressWarnings({"InvalidMemberReference", "MixinAnnotationTarget"})
     @TargetHandler(
         mixin = "net.fabricmc.fabric.mixin.client.rendering.shader.ShaderProgramMixin",
         name = "modifyProgramId"
