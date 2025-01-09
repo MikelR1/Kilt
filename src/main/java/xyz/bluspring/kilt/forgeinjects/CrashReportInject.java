@@ -2,7 +2,6 @@ package xyz.bluspring.kilt.forgeinjects;
 
 import net.minecraft.CrashReport;
 import net.minecraft.SystemReport;
-import net.minecraftforge.logging.CrashReportAnalyser;
 import net.minecraftforge.logging.CrashReportExtender;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -21,7 +20,7 @@ public abstract class CrashReportInject {
 
     @Inject(method = "getDetails(Ljava/lang/StringBuilder;)V", at = @At(value = "INVOKE", target = "Ljava/lang/StringBuilder;append(Ljava/lang/String;)Ljava/lang/StringBuilder;", ordinal = 3, shift = At.Shift.BEFORE))
     private void kilt$appendSuspectedMods(StringBuilder builder, CallbackInfo ci) {
-        builder.append(CrashReportAnalyser.appendSuspectedMods(this.exception, this.uncategorizedStackTrace));
+        //builder.append(CrashReportAnalyser.appendSuspectedMods(this.exception, this.uncategorizedStackTrace));
     }
 
     @Inject(method = "getDetails(Ljava/lang/StringBuilder;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/SystemReport;appendToCrashReportString(Ljava/lang/StringBuilder;)V", shift = At.Shift.BEFORE))
