@@ -17,6 +17,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.*;
@@ -34,6 +35,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.CapabilityProvider;
 import net.minecraftforge.common.capabilities.ICapabilityProviderImpl;
 import net.minecraftforge.common.extensions.IForgeEntity;
+import net.minecraftforge.common.util.ITeleporter;
 import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.event.entity.EntityEvent;
 import net.minecraftforge.fluids.FluidType;
@@ -301,7 +303,12 @@ public abstract class EntityInject implements IForgeEntity, CapabilityProviderIn
         return this.getType();
     }
 
-    // TODO: implement changeDimension
+    @Nullable
+    public Entity changeDimension(ServerLevel level, ITeleporter teleporter) {
+        // Kilt: redirect to Porting Lib's teleporter
+        return this.changeDimension(level, (io.github.fabricators_of_create.porting_lib.entity.ITeleporter) teleporter);
+    }
+
     // TODO: implement getEntitySize
 
     @Unique
