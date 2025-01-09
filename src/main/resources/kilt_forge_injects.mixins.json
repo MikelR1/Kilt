@@ -283,6 +283,7 @@
         "client.player.RemotePlayerInject",
         "client.renderer.DimensionSpecialEffectsInject",
         "client.renderer.FogRendererInject",
+        "client.renderer.GameRendererInject",
         "client.renderer.ItemBlockRenderTypesInject",
         "client.renderer.ItemInHandRendererInject",
         "client.renderer.ItemModelShaperInject",
