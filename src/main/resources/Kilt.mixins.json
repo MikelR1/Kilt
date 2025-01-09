@@ -84,6 +84,7 @@
         "data.registries.VanillaRegistriesAccessor",
         "debug.ChunkSkyLightSourcesMixin",
         "dev.MappedRegistryMixin",
+        "resources.RegistryOpsAccessor",
         "world.item.CreativeModeTabBuilderAccessor",
         "world.level.biome.BiomeClimateSettingsAccessor",
         "world.level.block.entity.RandomizableContainerBlockEntityMixin"

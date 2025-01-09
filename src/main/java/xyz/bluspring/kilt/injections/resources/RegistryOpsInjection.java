@@ -7,7 +7,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.ExtraCodecs;
-import xyz.bluspring.kilt.mixin.RegistryOpsAccessor;
+import xyz.bluspring.kilt.mixin.resources.RegistryOpsAccessor;
 
 public interface RegistryOpsInjection {
     static <E> MapCodec<HolderLookup.RegistryLookup<E>> retrieveRegistryLookup(ResourceKey<? extends Registry<? extends E>> resourceKey) {

@@ -56,6 +56,8 @@
         "network.protocol.status.ServerStatusInject",
         "network.syncher.EntityDataSerializersInject",
         "resources.HolderSetCodecInject",
+        "resources.RegistryDataLoaderInject",
+        "resources.RegistryOpsInject",
         "resources.ResourceKeyInject",
         "resources.ResourceLocationInject",
         "server.BootstrapInject",

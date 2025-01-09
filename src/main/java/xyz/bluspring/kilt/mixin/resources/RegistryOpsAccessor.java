@@ -1,4 +1,4 @@
-package xyz.bluspring.kilt.mixin;
+package xyz.bluspring.kilt.mixin.resources;
 
 import net.minecraft.resources.RegistryOps;
 import org.spongepowered.asm.mixin.Mixin;
