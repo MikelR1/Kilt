@@ -367,6 +367,11 @@ class KiltLoader {
         )
             return mapOf()
 
+        // Prevent users from having both Kilt and Connector at the same time.
+        if (jarFile.getEntry("org/sinytra/connector/ConnectorUtil.class") != null) {
+            throw Exception("Sinytra Connector was detected! I know I said \"Isn't it reasonable to have both?\", but come on!")
+        }
+
         val thrownExceptions = mutableMapOf<String, Exception>()
         DeltaTimeProfiler.push(modFile.nameWithoutExtension)
 
