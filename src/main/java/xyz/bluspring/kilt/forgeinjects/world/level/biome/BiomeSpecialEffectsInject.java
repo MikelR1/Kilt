@@ -45,6 +45,10 @@ public abstract class BiomeSpecialEffectsInject {
             this.delegate = delegate;
         }
 
+        public ColorModifier kilt$getDelegate() {
+            return this.delegate;
+        }
+
         @Override
         public void init() {
             BY_NAME.put(this.getName(), (BiomeSpecialEffects.GrassColorModifier) (Object) this);

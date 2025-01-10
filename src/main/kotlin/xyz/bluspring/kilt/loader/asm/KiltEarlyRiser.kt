@@ -282,6 +282,8 @@ class KiltEarlyRiser : Runnable {
             val grassColorModifierMapped = KiltRemapper.remapClass("net/minecraft/world/level/biome/BiomeSpecialEffects\$GrassColorModifier")
             val biomeInjectionName = "xyz/bluspring/kilt/injections/world/biome/BiomeSpecialEffectsGrassColorModifierInjection"
             val colorModifierName = "$grassColorModifierMapped\$ColorModifier"
+            val modifyColor = mappingResolver.mapMethodName("intermediary", "net.minecraft.class_4763\$class_5486", "method_30823", "(DDI)I")
+
             val classWriter = ClassWriter(Opcodes.ASM9)
             classWriter.visit(Opcodes.V17, Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC or Opcodes.ACC_INTERFACE or Opcodes.ACC_ABSTRACT, colorModifierName, null, "java/lang/Object", arrayOf("$biomeInjectionName\$ColorModifier"))
 
@@ -301,6 +303,12 @@ class KiltEarlyRiser : Runnable {
                 classNode.visitInnerClass(colorModifierName, grassColorModifierMapped, "ColorModifier", Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC or Opcodes.ACC_INTERFACE or Opcodes.ACC_ABSTRACT)
 
                 // Need to create this, and make sure it remaps to the pre-existing one.
+                /*
+                Expected code:
+                public static GrassColorModifier create(String name, String id, ColorModifier delegate) {
+                    return GrassColorModifier.create(name, id, (BiomeSpecialEffectsGrassColorModifierInjection.ColorModifier) delegate);
+                }
+                 */
                 classNode.visitMethod(Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC, "create", "(Ljava/lang/String;Ljava/lang/String;L$colorModifierName;)L$grassColorModifierMapped;", null, null).apply {
                     this.visitCode()
 
@@ -324,6 +332,43 @@ class KiltEarlyRiser : Runnable {
 
                     this.visitMaxs(0, 0)
                     this.visitEnd()
+                }
+
+                // Use a delegate for modifyColor
+                // Expected code:
+                /*
+                public int modifyColor(double x, double z, int grassColor) {
+                    return this.kilt$getDelegate().modifyGrassColor(x, z, grassColor);
+                }
+                 */
+                run {
+                    val originalModifyColorMethod = classNode.methods.first { it.name == modifyColor }
+                    classNode.methods.removeIf { it.name == modifyColor }
+
+                    val modifyColorMethod = classNode.visitMethod(Opcodes.ACC_PUBLIC, originalModifyColorMethod.name, originalModifyColorMethod.desc, originalModifyColorMethod.signature, originalModifyColorMethod.exceptions.toTypedArray())
+
+                    modifyColorMethod.visitCode()
+
+                    val label0 = Label()
+                    val label1 = Label()
+
+                    modifyColorMethod.visitLabel(label0)
+                    modifyColorMethod.visitVarInsn(Opcodes.ALOAD, 0)
+                    modifyColorMethod.visitMethodInsn(Opcodes.INVOKEVIRTUAL, grassColorModifierMapped, "kilt\$getDelegate", "()L$biomeInjectionName\$ColorModifier;", false)
+                    modifyColorMethod.visitVarInsn(Opcodes.DLOAD, 1)
+                    modifyColorMethod.visitVarInsn(Opcodes.DLOAD, 3)
+                    modifyColorMethod.visitVarInsn(Opcodes.ILOAD, 5)
+                    modifyColorMethod.visitMethodInsn(Opcodes.INVOKEINTERFACE, "$biomeInjectionName\$ColorModifier", "modifyGrassColor", "(DDI)I", true)
+                    modifyColorMethod.visitInsn(Opcodes.IRETURN)
+
+                    modifyColorMethod.visitLabel(label1)
+                    modifyColorMethod.visitLocalVariable("this", "L$grassColorModifierMapped;", null, label0, label1, 0)
+                    modifyColorMethod.visitLocalVariable("x", "D", null, label0, label1, 1)
+                    modifyColorMethod.visitLocalVariable("z", "D", null, label0, label1, 3)
+                    modifyColorMethod.visitLocalVariable("grassColor", "I", null, label0, label1, 5)
+
+                    modifyColorMethod.visitMaxs(6, 6)
+                    modifyColorMethod.visitEnd()
                 }
             }
 

@@ -17,6 +17,7 @@ import net.minecraftforge.registries.ForgeRegistry;
 import net.minecraftforge.registries.IForgeRegistry;
 import org.joml.Vector3f;
 import xyz.bluspring.kilt.injections.client.color.block.BlockColorsInjection;
+import xyz.bluspring.kilt.injections.world.biome.BiomeSpecialEffectsGrassColorModifierInjection;
 import xyz.bluspring.kilt.injections.world.item.enchantment.EnchantmentCategoryInjection;
 
 import java.util.List;
@@ -50,6 +51,15 @@ public class TestingMoreShit {
 
     public Map<Holder.Reference<Block>, BlockColor> a() {
         return ((BlockColorsInjection) this).kilt$getBlockColors();
+    }
+
+    private BiomeSpecialEffectsGrassColorModifierInjection.ColorModifier delegate;
+    public BiomeSpecialEffectsGrassColorModifierInjection.ColorModifier kilt$getDelegate() {
+        return this.delegate;
+    }
+
+    public int b(double x, double z, int c) {
+        return this.kilt$getDelegate().modifyGrassColor(x, z, c);
     }
 
     static {
