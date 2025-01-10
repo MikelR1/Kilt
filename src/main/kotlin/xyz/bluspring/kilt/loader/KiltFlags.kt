@@ -11,8 +11,8 @@ object KiltFlags {
     // without needing to actually launch a production environment.
     val FORCE_PRODUCTION_REMAPPING = "kilt.forceProductionRemap".checkPropertyBoolean()
 
-    // Enables coremods in all loaded Forge mods. Currently experimental, so its usage is currently not recommended.
-    val ENABLE_COREMODS = "kilt.enableCoreMods".checkPropertyBoolean()
+    // Disables coremods in all loaded Forge mods.
+    val DISABLE_COREMODS = !"kilt.disableCoreMods".checkPropertyBoolean()
 
     // Mainly for debugging, enables profiling if the DeltaTimeProfiler#dumpTree method is called.
     val ENABLE_PROFILING = "kilt.enableProfiling".checkPropertyBoolean()

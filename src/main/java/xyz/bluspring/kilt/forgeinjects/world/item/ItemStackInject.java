@@ -97,13 +97,13 @@ public abstract class ItemStackInject implements IForgeItemStack, CapabilityProv
             deserializeCaps(itemStack.getCapNBT());
     }
 
-    @WrapOperation(method = "isEmpty", at = @At(value = "FIELD", target = "Lnet/minecraft/world/item/ItemStack;item:Lnet/minecraft/world/item/Item;"))
+    /*@WrapOperation(method = "isEmpty", at = @At(value = "FIELD", target = "Lnet/minecraft/world/item/ItemStack;item:Lnet/minecraft/world/item/Item;"))
     private Item kilt$useDelegateCheckOnEmptyCheck(ItemStack instance, Operation<Item> original) {
         if (this.delegate == null)
             return original.call(instance);
 
         return this.delegate.value();
-    }
+    }*/
 
     @WrapOperation(method = "getItem", at = @At(value = "FIELD", target = "Lnet/minecraft/world/item/ItemStack;item:Lnet/minecraft/world/item/Item;"))
     private Item kilt$useDelegateCheckOnItemGet(ItemStack instance, Operation<Item> original) {

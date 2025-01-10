@@ -276,6 +276,15 @@ object ASMAPI {
      */
     @JvmStatic
     fun redirectFieldToMethod(classNode: ClassNode, fieldName: String, methodName: String?) {
+        kiltRedirectFieldToMethodExcept(classNode, fieldName, methodName, *mutableListOf<String>().apply {
+            // Kilt: Ignore redirecting methods that match the exact name that is being redirected
+            if (methodName != null)
+                this.add(methodName)
+        }.toTypedArray())
+    }
+
+    @JvmStatic
+    fun kiltRedirectFieldToMethodExcept(classNode: ClassNode, fieldName: String, methodName: String?, vararg ignoredMethods: String) {
         var foundMethod: MethodNode? = null
         var foundField: FieldNode? = null
         for (fieldNode in classNode.fields) {
@@ -295,6 +304,9 @@ object ASMAPI {
         val methodSignature = "()" + foundField.desc
 
         for (methodNode in classNode.methods) {
+            if (ignoredMethods.contains(methodNode.name))
+                continue
+
             if (methodNode.desc == methodSignature) {
                 if (foundMethod == null && Objects.equals(methodNode.name, methodName)) {
                     foundMethod = methodNode

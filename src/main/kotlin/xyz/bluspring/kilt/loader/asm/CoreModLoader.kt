@@ -61,7 +61,7 @@ object CoreModLoader {
     )
 
     val loadedCoreMods = mutableListOf<CoreMod>()
-    val enableCoreMods = KiltFlags.ENABLE_COREMODS
+    val enableCoreMods = KiltFlags.DISABLE_COREMODS
 
     fun scanAndLoadCoreMods(mod: ForgeMod) {
         if (!enableCoreMods)
